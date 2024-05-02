@@ -31,6 +31,10 @@ pub struct OffsetList {
 }
 
 impl OffsetList {
+    const FUNCTION_PATTERN: &'static str = r"func\t([\dA-Fa-f]+)\t[\dA-Fa-f]+";
+    const GLOBAL_PATTERN: &'static str = r"global\t([\dA-Fa-f]+)";
+    const NAME_PATTERN: &'static str = r"name\t([\dA-Fa-f]+)";
+
     fn parse(idaexport: &Path, graph: &mut Graph) -> anyhow::Result<Self> {
         let buffer_reader = |file_name| -> anyhow::Result<_> {
             let path = idaexport.join(file_name);
@@ -44,21 +48,14 @@ impl OffsetList {
                 let mut file = buffer_reader("idaexport_base.txt")?;
                 Self::parse_base_address(&mut file).context("failed to parse idaexport_base.txt")
             }?;
-            let function_offsets = {
-                let mut file = buffer_reader("idaexport_func.txt")?;
-                Self::parse_function_offsets(&mut file, base_address)
-                    .context("failed to parse idaexport_func.txt")
-            }?;
-            let global_offsets = {
-                let mut file = buffer_reader("idaexport_global.txt")?;
-                Self::parse_global_offsets(&mut file, base_address)
-                    .context("failed to parse idaexport_global.txt")
-            }?;
-            let name_offsets = {
-                let mut file = buffer_reader("idaexport_name.txt")?;
-                Self::parse_name_offsets(&mut file, base_address)
-                    .context("failed to parse idaexport_name.txt")
-            }?;
+            let do_parse = |file_name, pattern| {
+                let mut file = buffer_reader(file_name)?;
+                Self::parse_generic_offsets(&mut file, base_address, pattern)
+                    .with_context(|| format!("failed to parse {file_name}"))
+            };
+            let function_offsets = do_parse("idaexport_func.txt", Self::FUNCTION_PATTERN)?;
+            let global_offsets = do_parse("idaexport_global.txt", Self::GLOBAL_PATTERN)?;
+            let name_offsets = do_parse("idaexport_name.txt", Self::NAME_PATTERN)?;
 
             function_offsets
                 .into_iter()
@@ -105,31 +102,6 @@ impl OffsetList {
             .context("failed to match base address pattern")?;
         u64::from_str_radix(&captures[1], 16)
             .with_context(|| format!("failed to parse base address: {}", &captures[1]))
-    }
-
-    fn parse_function_offsets<R: BufRead>(
-        idaexport_func: &mut R,
-        base_address: u64,
-    ) -> anyhow::Result<Vec<Offset>> {
-        Self::parse_generic_offsets(
-            idaexport_func,
-            base_address,
-            r"func\t([\dA-Fa-f]+)\t[\dA-Fa-f]+",
-        )
-    }
-
-    fn parse_global_offsets<R: BufRead>(
-        idaexport_global: &mut R,
-        base_address: u64,
-    ) -> anyhow::Result<Vec<Offset>> {
-        Self::parse_generic_offsets(idaexport_global, base_address, r"global\t([\dA-Fa-f]+)")
-    }
-
-    fn parse_name_offsets<R: BufRead>(
-        idaexport_name: &mut R,
-        base_address: u64,
-    ) -> anyhow::Result<Vec<Offset>> {
-        Self::parse_generic_offsets(idaexport_name, base_address, r"name\t([\dA-Fa-f]+)")
     }
 
     fn parse_generic_offsets<R: BufRead>(
@@ -279,10 +251,14 @@ func	140001140	140001170
 func	140001180	140001187
 "[..],
         );
-        let result = OffsetList::parse_function_offsets(&mut buffer, 0x140000000)?
-            .iter()
-            .map(|x| x.0)
-            .collect::<Vec<_>>();
+        let result = OffsetList::parse_generic_offsets(
+            &mut buffer,
+            0x140000000,
+            OffsetList::FUNCTION_PATTERN,
+        )?
+        .iter()
+        .map(|x| x.0)
+        .collect::<Vec<_>>();
         assert_eq!(
             result,
             [0x1000, 0x1060, 0x1080, 0x1090, 0x1110, 0x1120, 0x1140, 0x1180]
@@ -303,10 +279,14 @@ global	146A8C000
 global	146A8F570
 "[..],
         );
-        let result = OffsetList::parse_global_offsets(&mut buffer, 0x140000000)?
-            .iter()
-            .map(|x| x.0)
-            .collect::<Vec<_>>();
+        let result = OffsetList::parse_generic_offsets(
+            &mut buffer,
+            0x140000000,
+            OffsetList::GLOBAL_PATTERN,
+        )?
+        .iter()
+        .map(|x| x.0)
+        .collect::<Vec<_>>();
         assert_eq!(
             result,
             [0x2C0F30C, 0x2C166DC, 0x2C17000, 0x6736290, 0x674C73B, 0x6A8C000, 0x6A8F570]
@@ -328,10 +308,11 @@ name	146A8C000	TlsStart
 name	146A8F570	TlsEnd
 "[..],
         );
-        let result = OffsetList::parse_name_offsets(&mut buffer, 0x140000000)?
-            .iter()
-            .map(|x| x.0)
-            .collect::<Vec<_>>();
+        let result =
+            OffsetList::parse_generic_offsets(&mut buffer, 0x140000000, OffsetList::NAME_PATTERN)?
+                .iter()
+                .map(|x| x.0)
+                .collect::<Vec<_>>();
         assert_eq!(
             result,
             [
