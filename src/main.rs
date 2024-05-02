@@ -59,20 +59,3 @@ fn main() -> anyhow::Result<()> {
 
     Ok(())
 }
-
-#[cfg(test)]
-mod tests {
-    use crate::offsets::OffsetLists;
-    use std::path::Path;
-
-    #[test]
-    fn it_works() -> anyhow::Result<()> {
-        let (offset_lists, _) = OffsetLists::parse_all(Path::new(
-            r"E:\Repos\fallout4-addresslibgen\target\artifacts",
-        ))?;
-        for (version, _) in offset_lists.iter() {
-            println!("{version}");
-        }
-        Ok(())
-    }
-}
