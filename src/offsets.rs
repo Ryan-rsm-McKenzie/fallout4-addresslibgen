@@ -164,10 +164,6 @@ impl OffsetList {
     pub fn iter(&self) -> impl Iterator<Item = (&Offset, &Mapping)> {
         self.offsets.iter()
     }
-
-    pub fn len(&self) -> usize {
-        self.offsets.len()
-    }
 }
 
 pub struct OffsetLists {

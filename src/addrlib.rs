@@ -137,11 +137,22 @@ pub fn write_bins(
                     .with_context(|| format!("failed write for address bin: {version}"))
             };
 
-            write_u64(offset_list.len() as u64)?;
-            for (offset, mapping) in offset_list.iter() {
-                let id = graph.get(mapping.ix);
-                write_u64(id.get())?;
-                write_u64(offset.0.into())?;
+            let mappings = {
+                let mut v = offset_list
+                    .iter()
+                    .map(|(offset, mapping)| {
+                        let id = graph.get(mapping.ix);
+                        (id.get(), u64::from(offset.0))
+                    })
+                    .collect::<Vec<_>>();
+                v.sort_by_key(|x| x.0);
+                v
+            };
+
+            write_u64(mappings.len() as u64)?;
+            for (id, offset) in mappings {
+                write_u64(id)?;
+                write_u64(offset)?;
             }
         }
     }
