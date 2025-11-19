@@ -1,5 +1,5 @@
 [package]
-edition = "2021"
+edition = "2024"
 name = "libgen"
 version = "0.1.0"
 
@@ -12,4 +12,5 @@ clap = {version = "4.5.4", features = ["derive"]}
 nonmax = "0.5.5"
 petgraph = "0.6.4"
 regex-lite = "0.1.5"
+smallvec = "1.15.1"
 walkdir = "2.5.0"

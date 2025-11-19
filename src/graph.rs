@@ -6,6 +6,7 @@ use petgraph::{
     graph::{self, IndexType, NodeIndex},
     visit::{Bfs, IntoNodeIdentifiers as _},
 };
+use smallvec::SmallVec;
 
 #[derive(Clone, Copy, Debug, Default, Eq, Hash, Ord, PartialEq, PartialOrd)]
 pub struct Ix(NonMaxU32);
@@ -27,14 +28,19 @@ unsafe impl IndexType for Ix {
     }
 }
 
-type Node = Option<Id>;
+// Different versions/runs/inputs to the diff calculator could end up producing different offset
+// matches such that we end up in a situation where 2 offsets that didn't previously match (and
+// thus had different ids assigned) end up matching in the future. In order to handle this
+// situation, we use an array where the last element is the latest id assigned to those offset
+// connections, from the most recent address bin.
+type Node = SmallVec<[Id; 1]>;
 
 #[derive(Default)]
 pub struct Graph(graph::Graph<Node, (), Undirected, Ix>);
 
 impl Graph {
     pub fn add_node(&mut self) -> NodeIndex<Ix> {
-        self.0.add_node(None)
+        self.0.add_node(Default::default())
     }
 
     pub fn add_edges(
@@ -94,12 +100,8 @@ impl Graph {
                     let mut bfs = Bfs::new(&self.0, root_id);
                     while let Some(node_id) = bfs.next(&self.0) {
                         let node = &mut self.0[node_id];
-                        if let Some(id) = node {
-                            if id != offset_id {
-                                anyhow::bail!("attempted to assign id '{offset_id}' from bin '{version}' to offset '{offset}', but an id is already assigned ({id})",);
-                            }
-                        } else {
-                            *node = Some(*offset_id);
+                        if node.last().is_none_or(|id| id != offset_id) {
+                            node.push(*offset_id);
                         }
                     }
                 }
@@ -113,18 +115,18 @@ impl Graph {
         println!("assigning ids to all offsets...");
 
         for node_id in self.0.node_identifiers() {
-            if self.0[node_id].is_none() {
+            if self.0[node_id].is_empty() {
                 let id = initial_id;
                 initial_id = initial_id.next();
                 let mut bfs = Bfs::new(&self.0, node_id);
                 while let Some(node_id) = bfs.next(&self.0) {
                     let node = &mut self.0[node_id];
-                    if node.is_some() {
+                    if let Some(current_id) = node.last() {
                         anyhow::bail!(
-                            "attempted to assign an id to an offset, but an id is already assigned"
+                            "attempted to assign an id '{id}' to an offset, but an id '{current_id}' is already assigned"
                         );
                     } else {
-                        *node = Some(id);
+                        node.push(id);
                     }
                 }
             }
@@ -134,6 +136,9 @@ impl Graph {
     }
 
     pub fn get(&self, key: NodeIndex<Ix>) -> Id {
-        self.0[key].expect("expected id to already be initialized upon access")
+        self.0[key]
+            .last()
+            .copied()
+            .expect("expected id to already be initialized upon access")
     }
 }
