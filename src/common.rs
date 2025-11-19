@@ -1,13 +1,6 @@
-use nonmax::{
-    NonMaxU64,
-    TryFromIntError,
-};
+use nonmax::{NonMaxU64, TryFromIntError};
 use std::{
-    fmt::{
-        self,
-        Display,
-        Formatter,
-    },
+    fmt::{self, Display, Formatter},
     ops::Index,
 };
 

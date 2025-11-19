@@ -1,25 +1,12 @@
 use crate::{
-    common::{
-        Id,
-        Offset,
-        Version,
-    },
+    common::{Id, Offset, Version},
     graph::Graph,
     offsets::OffsetLists,
 };
 use anyhow::Context as _;
-use byteorder::{
-    LittleEndian,
-    ReadBytesExt as _,
-    WriteBytesExt as _,
-};
+use byteorder::{LittleEndian, ReadBytesExt as _, WriteBytesExt as _};
 use regex_lite::Regex;
-use std::{
-    collections::BTreeMap,
-    fs::File,
-    io::Read,
-    path::Path,
-};
+use std::{collections::BTreeMap, fs::File, io::Read, path::Path};
 use walkdir::WalkDir;
 
 pub struct AddressBin {

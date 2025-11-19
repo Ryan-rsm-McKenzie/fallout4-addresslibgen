@@ -1,12 +1,6 @@
 use crate::{
-    common::{
-        Offset,
-        Version,
-    },
-    graph::{
-        Graph,
-        Ix,
-    },
+    common::{Offset, Version},
+    graph::{Graph, Ix},
 };
 use anyhow::Context as _;
 use petgraph::graph::NodeIndex;
@@ -14,10 +8,7 @@ use regex_lite::Regex;
 use std::{
     collections::BTreeMap,
     fs::File,
-    io::{
-        BufRead,
-        BufReader,
-    },
+    io::{BufRead, BufReader},
     path::Path,
 };
 use walkdir::WalkDir;
@@ -257,7 +248,9 @@ func	140001180	140001187
         .collect::<Vec<_>>();
         assert_eq!(
             result,
-            [0x1000, 0x1060, 0x1080, 0x1090, 0x1110, 0x1120, 0x1140, 0x1180]
+            [
+                0x1000, 0x1060, 0x1080, 0x1090, 0x1110, 0x1120, 0x1140, 0x1180
+            ]
         );
         Ok(())
     }
@@ -285,7 +278,9 @@ global	146A8F570
         .collect::<Vec<_>>();
         assert_eq!(
             result,
-            [0x2C0F30C, 0x2C166DC, 0x2C17000, 0x6736290, 0x674C73B, 0x6A8C000, 0x6A8F570]
+            [
+                0x2C0F30C, 0x2C166DC, 0x2C17000, 0x6736290, 0x674C73B, 0x6A8C000, 0x6A8F570
+            ]
         );
         Ok(())
     }

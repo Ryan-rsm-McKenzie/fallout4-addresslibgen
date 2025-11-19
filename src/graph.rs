@@ -1,22 +1,10 @@
-use crate::{
-    addrlib::AddressBins,
-    common::Id,
-    diffs::DiffLists,
-    OffsetLists,
-};
+use crate::{OffsetLists, addrlib::AddressBins, common::Id, diffs::DiffLists};
 use anyhow::Context as _;
 use nonmax::NonMaxU32;
 use petgraph::{
-    graph::{
-        self,
-        IndexType,
-        NodeIndex,
-    },
-    visit::{
-        Bfs,
-        IntoNodeIdentifiers as _,
-    },
     Undirected,
+    graph::{self, IndexType, NodeIndex},
+    visit::{Bfs, IntoNodeIdentifiers as _},
 };
 
 #[derive(Clone, Copy, Debug, Default, Eq, Hash, Ord, PartialEq, PartialOrd)]

@@ -1,15 +1,9 @@
-use crate::common::{
-    Offset,
-    Version,
-};
+use crate::common::{Offset, Version};
 use anyhow::Context as _;
 use regex_lite::Regex;
 use std::{
     fs::File,
-    io::{
-        BufRead,
-        BufReader,
-    },
+    io::{BufRead, BufReader},
     num::ParseIntError,
     path::Path,
 };
